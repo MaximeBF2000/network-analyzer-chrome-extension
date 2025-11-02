@@ -64,6 +64,12 @@ class NetworkAnalyzer {
 
     this.setupUI()
     this.setupKeyboardShortcuts()
+
+    // Initialize dark mode after a small delay to ensure DOM is ready
+    // This is especially important in devtools panels
+    setTimeout(() => {
+      this.initDarkMode()
+    }, 100)
   }
 
   captureResponseBody(harRequest) {
@@ -321,6 +327,89 @@ class NetworkAnalyzer {
     document.getElementById('detailCloseBtn').addEventListener('click', () => {
       this.closeDetailPanel()
     })
+
+    // Dark mode toggle
+    document.getElementById('darkModeToggle').addEventListener('click', () => {
+      this.toggleDarkMode()
+    })
+  }
+
+  initDarkMode() {
+    // Load dark mode preference from chrome.storage.local
+    // Ensure DOM is ready before accessing elements
+    chrome.storage.local.get(['darkMode'], result => {
+      if (chrome.runtime.lastError) {
+        console.warn(
+          'Error loading dark mode preference:',
+          chrome.runtime.lastError
+        )
+        return
+      }
+
+      // Check if darkMode exists and is explicitly true (handles undefined, null, false)
+      const isDarkMode = result.darkMode === true
+
+      // Use setTimeout to ensure DOM elements are ready
+      setTimeout(() => {
+        this.setDarkMode(isDarkMode)
+      }, 0)
+    })
+  }
+
+  toggleDarkMode() {
+    const isDarkMode = document.body.classList.contains('dark-mode')
+    const newDarkMode = !isDarkMode
+    this.setDarkMode(newDarkMode)
+
+    // Save preference to chrome.storage.local with error handling and verification
+    chrome.storage.local.set({ darkMode: newDarkMode }, () => {
+      if (chrome.runtime.lastError) {
+        console.error(
+          'Error saving dark mode preference:',
+          chrome.runtime.lastError
+        )
+        // Try to save again or use fallback
+        return
+      }
+
+      // Verify the save worked by reading it back
+      chrome.storage.local.get(['darkMode'], result => {
+        if (result.darkMode !== newDarkMode) {
+          console.error(
+            'Dark mode preference verification failed. Expected:',
+            newDarkMode,
+            'Got:',
+            result.darkMode
+          )
+        }
+      })
+    })
+  }
+
+  setDarkMode(enabled) {
+    const body = document.body
+    const toggleText = document.getElementById('darkModeToggleText')
+    const toggleIcon = document.querySelector('#darkModeToggle svg')
+
+    // Guard against missing elements
+    if (!body || !toggleText || !toggleIcon) {
+      console.warn('Dark mode elements not ready yet')
+      return
+    }
+
+    if (enabled) {
+      body.classList.add('dark-mode')
+      toggleText.textContent = 'Light'
+      // Moon icon for dark mode
+      toggleIcon.innerHTML =
+        '<path d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z"/>'
+    } else {
+      body.classList.remove('dark-mode')
+      toggleText.textContent = 'Dark'
+      // Sun icon for light mode
+      toggleIcon.innerHTML =
+        '<path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z"/>'
+    }
   }
 
   setupKeyboardShortcuts() {

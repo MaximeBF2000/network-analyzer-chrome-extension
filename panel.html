@@ -345,6 +345,163 @@
         font-size: 10px;
         margin-left: 6px;
       }
+
+      /* Dark Mode Toggle Button */
+      .dark-mode-toggle {
+        padding: 6px 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: white;
+        cursor: pointer;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .dark-mode-toggle:hover {
+        background: #f0f0f0;
+      }
+
+      .dark-mode-toggle svg {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+      }
+
+      /* Dark Mode Styles */
+      body.dark-mode {
+        background: #1e1e1e;
+        color: #d4d4d4;
+      }
+
+      body.dark-mode .toolbar {
+        background: #252526;
+        border-bottom-color: #3e3e42;
+      }
+
+      body.dark-mode .search-box,
+      body.dark-mode .filter-select,
+      body.dark-mode .filter-input {
+        background: #3e3e42;
+        border-color: #3e3e42;
+        color: #d4d4d4;
+      }
+
+      body.dark-mode .search-box:focus {
+        border-color: #4a90e2;
+      }
+
+      body.dark-mode .search-box::placeholder,
+      body.dark-mode .filter-input::placeholder {
+        color: #858585;
+      }
+
+      body.dark-mode .btn {
+        background: #3e3e42;
+        border-color: #3e3e42;
+        color: #d4d4d4;
+      }
+
+      body.dark-mode .btn:hover {
+        background: #4a4a4a;
+      }
+
+      body.dark-mode .btn-primary {
+        background: #4a90e2;
+        border-color: #4a90e2;
+        color: white;
+      }
+
+      body.dark-mode .btn-primary:hover {
+        background: #357abd;
+      }
+
+      body.dark-mode .request-row {
+        border-bottom-color: #3e3e42;
+      }
+
+      body.dark-mode .request-row:hover {
+        background: #2d2d30;
+      }
+
+      body.dark-mode .request-row.selected {
+        background: #1e3a5f;
+      }
+
+      body.dark-mode .url {
+        color: #858585;
+      }
+
+      body.dark-mode .url-domain {
+        color: #6a6a6a;
+      }
+
+      body.dark-mode .type,
+      body.dark-mode .time {
+        color: #6a6a6a;
+      }
+
+      body.dark-mode .detail-panel {
+        background: #252526;
+        border-top-color: #3e3e42;
+      }
+
+      body.dark-mode .detail-tabs {
+        background: #2d2d30;
+        border-bottom-color: #3e3e42;
+      }
+
+      body.dark-mode .detail-tab {
+        color: #d4d4d4;
+      }
+
+      body.dark-mode .detail-tab.active {
+        background: #1e1e1e;
+        border-bottom-color: #4a90e2;
+      }
+
+      body.dark-mode .detail-close-btn {
+        color: #858585;
+      }
+
+      body.dark-mode .detail-close-btn:hover {
+        color: #d4d4d4;
+        background: #3e3e42;
+      }
+
+      body.dark-mode .detail-section h3 {
+        color: #d4d4d4;
+      }
+
+      body.dark-mode .headers-table th {
+        background: #2d2d30;
+        color: #858585;
+        border-bottom-color: #3e3e42;
+      }
+
+      body.dark-mode .headers-table td {
+        border-bottom-color: #3e3e42;
+        color: #d4d4d4;
+      }
+
+      body.dark-mode .headers-table td:first-child {
+        color: #d4d4d4;
+      }
+
+      body.dark-mode .empty-state {
+        color: #6a6a6a;
+      }
+
+      body.dark-mode .dark-mode-toggle {
+        background: #3e3e42;
+        border-color: #3e3e42;
+        color: #d4d4d4;
+      }
+
+      body.dark-mode .dark-mode-toggle:hover {
+        background: #4a4a4a;
+      }
     </style>
   </head>
   <body>
@@ -391,6 +548,18 @@
       </div>
       <button class="btn" id="clearBtn">Clear</button>
       <button class="btn btn-primary" id="exportBtn">Export Selected</button>
+      <button
+        class="dark-mode-toggle"
+        id="darkModeToggle"
+        title="Toggle dark mode"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path
+            d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z"
+          />
+        </svg>
+        <span id="darkModeToggleText">Dark</span>
+      </button>
     </div>
 
     <!-- Request List -->

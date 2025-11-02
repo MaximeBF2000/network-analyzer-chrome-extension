@@ -3,7 +3,7 @@
   "name": "Network Analyzer",
   "version": "1.0.0",
   "description": "Advanced network traffic analyzer for web reverse engineering",
-  "permissions": ["webRequest", "tabs"],
+  "permissions": ["webRequest", "tabs", "storage"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"
