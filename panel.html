@@ -287,6 +287,85 @@
         line-height: 1.5;
         white-space: pre-wrap;
         word-break: break-all;
+        tabindex: 0;
+      }
+
+      /* Response Body Search */
+      .response-search-container {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .response-search-input {
+        flex: 1;
+        padding: 6px 10px;
+        border: 1px solid #3e3e42;
+        border-radius: 4px;
+        background: #3e3e42;
+        color: #d4d4d4;
+        font-size: 11px;
+        font-family: inherit;
+      }
+
+      .response-search-input:focus {
+        outline: none;
+        border-color: #4a90e2;
+      }
+
+      .response-search-input::placeholder {
+        color: #858585;
+      }
+
+      .response-search-count {
+        font-size: 11px;
+        color: #858585;
+        white-space: nowrap;
+      }
+
+      /* Highlight styles */
+      .search-highlight {
+        background-color: #ffff00;
+        color: #000;
+        padding: 2px 0;
+        border-radius: 2px;
+      }
+
+      .search-highlight.active {
+        background-color: #ffaa00;
+        outline: 2px solid #ffaa00;
+        outline-offset: 1px;
+      }
+
+      body.dark-mode .response-search-input {
+        background: #3e3e42;
+        border-color: #3e3e42;
+        color: #d4d4d4;
+      }
+
+      body.dark-mode .response-search-input:focus {
+        border-color: #4a90e2;
+      }
+
+      body:not(.dark-mode) .response-search-input {
+        background: white;
+        border-color: #ddd;
+        color: #333;
+      }
+
+      body:not(.dark-mode) .response-search-input:focus {
+        border-color: #4a90e2;
+      }
+
+      body:not(.dark-mode) .search-highlight {
+        background-color: #ffff00;
+        color: #000;
+      }
+
+      body:not(.dark-mode) .search-highlight.active {
+        background-color: #ffaa00;
+        outline-color: #ffaa00;
       }
 
       .code-copy-btn {

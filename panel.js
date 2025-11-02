@@ -11,6 +11,14 @@ class NetworkAnalyzer {
       url: ''
     }
 
+    // Response body search state
+    this.responseSearchState = {
+      searchTerm: '',
+      matches: [],
+      currentMatchIndex: -1,
+      originalText: ''
+    }
+
     this.init()
   }
 
@@ -701,6 +709,12 @@ class NetworkAnalyzer {
     const req = this.requests.get(this.selectedRequestId)
     const content = document.getElementById('detailContent')
 
+    // Reset search state when switching requests or tabs
+    this.responseSearchState.searchTerm = ''
+    this.responseSearchState.matches = []
+    this.responseSearchState.currentMatchIndex = -1
+    this.responseSearchState.originalText = ''
+
     switch (tab) {
       case 'headers':
         content.innerHTML = this.renderHeadersAndRequest(req)
@@ -718,6 +732,216 @@ class NetworkAnalyzer {
 
     // Attach copy button event listeners
     this.attachCopyButtons(content)
+
+    // Setup response body search if response tab is active
+    if (tab === 'response') {
+      this.setupResponseSearch(content)
+    }
+  }
+
+  setupResponseSearch(content) {
+    const searchInput = content.querySelector('.response-search-input')
+    const codeBlock = content.querySelector(
+      '.code-block[id^="copy-response-body-"]'
+    )
+
+    if (!searchInput || !codeBlock) {
+      return // No response body to search
+    }
+
+    const requestId = searchInput.id.replace('response-search-', '')
+    const searchCount = content.querySelector(
+      `#response-search-count-${requestId}`
+    )
+
+    // Initialize search state for this request
+    this.responseSearchState.searchTerm = ''
+    this.responseSearchState.matches = []
+    this.responseSearchState.currentMatchIndex = -1
+
+    // Search input handler
+    searchInput.addEventListener('input', e => {
+      const searchTerm = e.target.value
+      this.performResponseSearch(searchTerm, codeBlock, searchCount)
+    })
+
+    // Tab navigation handler for code block
+    codeBlock.addEventListener('keydown', e => {
+      if (
+        e.key === 'Tab' &&
+        !e.shiftKey &&
+        this.responseSearchState.matches.length > 0
+      ) {
+        e.preventDefault()
+        this.navigateToNextMatch(codeBlock)
+      } else if (
+        e.key === 'Tab' &&
+        e.shiftKey &&
+        this.responseSearchState.matches.length > 0
+      ) {
+        e.preventDefault()
+        this.navigateToPreviousMatch(codeBlock)
+      }
+    })
+
+    // Focus search input with Ctrl/Cmd + F
+    codeBlock.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault()
+        searchInput.focus()
+        searchInput.select()
+      }
+    })
+  }
+
+  performResponseSearch(searchTerm, codeBlock, searchCount) {
+    this.responseSearchState.searchTerm = searchTerm
+    this.responseSearchState.currentMatchIndex = -1
+
+    if (!searchTerm.trim()) {
+      // Clear highlights
+      this.clearHighlights(codeBlock)
+      if (searchCount) {
+        searchCount.textContent = ''
+      }
+      return
+    }
+
+    const originalText = this.responseSearchState.originalText
+    const escapedTerm = this.escapeHtml(searchTerm)
+
+    // Find all matches (case-insensitive)
+    const regex = new RegExp(this.escapeRegex(searchTerm), 'gi')
+    const matches = []
+    let match
+
+    // Reset regex lastIndex to avoid issues
+    regex.lastIndex = 0
+
+    while ((match = regex.exec(originalText)) !== null) {
+      matches.push({
+        index: match.index,
+        length: match[0].length,
+        text: match[0]
+      })
+    }
+
+    this.responseSearchState.matches = matches
+
+    // Update count
+    if (searchCount) {
+      if (matches.length > 0) {
+        searchCount.textContent = `${matches.length} match${
+          matches.length !== 1 ? 'es' : ''
+        }`
+      } else {
+        searchCount.textContent = 'No matches'
+      }
+    }
+
+    // Highlight matches
+    this.highlightMatches(codeBlock, originalText, searchTerm)
+
+    // Scroll to first match if any
+    if (matches.length > 0) {
+      this.navigateToMatch(codeBlock, 0)
+    }
+  }
+
+  escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  }
+
+  highlightMatches(codeBlock, originalText, searchTerm) {
+    if (!searchTerm.trim()) {
+      codeBlock.innerHTML = this.escapeHtml(originalText)
+      return
+    }
+
+    const regex = new RegExp(this.escapeRegex(searchTerm), 'gi')
+    let highlightedText = ''
+    let lastIndex = 0
+    let match
+
+    regex.lastIndex = 0
+
+    while ((match = regex.exec(originalText)) !== null) {
+      // Add text before match
+      highlightedText += this.escapeHtml(
+        originalText.substring(lastIndex, match.index)
+      )
+
+      // Add highlighted match
+      const matchText = this.escapeHtml(match[0])
+      highlightedText += `<mark class="search-highlight">${matchText}</mark>`
+
+      lastIndex = match.index + match[0].length
+    }
+
+    // Add remaining text
+    highlightedText += this.escapeHtml(originalText.substring(lastIndex))
+
+    codeBlock.innerHTML = highlightedText
+
+    // Update active highlight
+    this.updateActiveHighlight(codeBlock)
+  }
+
+  clearHighlights(codeBlock) {
+    const originalText = this.responseSearchState.originalText
+    codeBlock.innerHTML = this.escapeHtml(originalText)
+    this.responseSearchState.matches = []
+    this.responseSearchState.currentMatchIndex = -1
+  }
+
+  navigateToNextMatch(codeBlock) {
+    if (this.responseSearchState.matches.length === 0) return
+
+    this.responseSearchState.currentMatchIndex =
+      (this.responseSearchState.currentMatchIndex + 1) %
+      this.responseSearchState.matches.length
+
+    this.navigateToMatch(codeBlock, this.responseSearchState.currentMatchIndex)
+  }
+
+  navigateToPreviousMatch(codeBlock) {
+    if (this.responseSearchState.matches.length === 0) return
+
+    this.responseSearchState.currentMatchIndex =
+      this.responseSearchState.currentMatchIndex <= 0
+        ? this.responseSearchState.matches.length - 1
+        : this.responseSearchState.currentMatchIndex - 1
+
+    this.navigateToMatch(codeBlock, this.responseSearchState.currentMatchIndex)
+  }
+
+  navigateToMatch(codeBlock, matchIndex) {
+    if (matchIndex < 0 || matchIndex >= this.responseSearchState.matches.length)
+      return
+
+    this.responseSearchState.currentMatchIndex = matchIndex
+    this.updateActiveHighlight(codeBlock)
+
+    // Scroll to the active match
+    const highlights = codeBlock.querySelectorAll('.search-highlight')
+    if (highlights[matchIndex]) {
+      highlights[matchIndex].scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest'
+      })
+    }
+  }
+
+  updateActiveHighlight(codeBlock) {
+    const highlights = codeBlock.querySelectorAll('.search-highlight')
+    highlights.forEach((highlight, index) => {
+      if (index === this.responseSearchState.currentMatchIndex) {
+        highlight.classList.add('active')
+      } else {
+        highlight.classList.remove('active')
+      }
+    })
   }
 
   attachCopyButtons(container) {
@@ -894,7 +1118,24 @@ class NetworkAnalyzer {
         }
       }
 
+      // Store original text for search
+      this.responseSearchState.originalText = formattedBody
+
       const responseBodyId = 'copy-response-body-' + req.requestId
+      const searchInputId = 'response-search-' + req.requestId
+
+      // Add search input
+      html += '<div class="response-search-container">'
+      html +=
+        '<input type="text" class="response-search-input" id="' +
+        searchInputId +
+        '" placeholder="Search in response body..." />'
+      html +=
+        '<span class="response-search-count" id="response-search-count-' +
+        req.requestId +
+        '"></span>'
+      html += '</div>'
+
       html += '<div class="code-block-wrapper">'
       html +=
         '<button class="code-copy-btn" data-copy-id="' +
@@ -905,7 +1146,7 @@ class NetworkAnalyzer {
       html +=
         '<div class="code-block" id="' +
         responseBodyId +
-        '">' +
+        '" tabindex="0">' +
         this.escapeHtml(formattedBody) +
         '</div>'
       html += '</div>'
