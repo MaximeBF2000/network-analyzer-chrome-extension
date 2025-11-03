@@ -756,9 +756,6 @@ class NetworkAnalyzer {
       case 'curl':
         content.innerHTML = this.renderCurl(req)
         break
-      case 'fetch':
-        content.innerHTML = this.renderFetch(req)
-        break
     }
 
     // Attach copy button event listeners
@@ -1228,46 +1225,64 @@ class NetworkAnalyzer {
 
   renderCurl(req) {
     const curl = this.generateCurl(req)
-    const curlId = 'copy-curl-' + req.requestId
-    return (
-      '<div class="detail-section">' +
-      '<h3>cURL Command</h3>' +
-      '<div class="code-block-wrapper">' +
-      '<button class="code-copy-btn" data-copy-id="' +
-      curlId +
-      '" title="Copy cURL command">' +
-      this.getCopyIconSVG() +
-      '</button>' +
-      '<div class="code-block" id="' +
-      curlId +
-      '">' +
-      this.escapeHtml(curl) +
-      '</div>' +
-      '</div>' +
-      '</div>'
-    )
-  }
-
-  renderFetch(req) {
     const fetchCode = this.generateFetch(req)
+    const pythonCode = this.generatePython(req)
+
+    const curlId = 'copy-curl-' + req.requestId
     const fetchId = 'copy-fetch-' + req.requestId
-    return (
-      '<div class="detail-section">' +
-      '<h3>JavaScript Fetch</h3>' +
-      '<div class="code-block-wrapper">' +
+    const pythonId = 'copy-python-' + req.requestId
+
+    let html = ''
+
+    // cURL Command
+    html += '<div class="detail-section">'
+    html += '<h3>cURL Command</h3>'
+    html += '<div class="code-block-wrapper">'
+    html +=
+      '<button class="code-copy-btn" data-copy-id="' +
+      curlId +
+      '" title="Copy cURL command">'
+    html += this.getCopyIconSVG()
+    html += '</button>'
+    html += '<div class="code-block" id="' + curlId + '">'
+    html += this.escapeHtml(curl)
+    html += '</div>'
+    html += '</div>'
+    html += '</div>'
+
+    // JavaScript Fetch
+    html += '<div class="detail-section">'
+    html += '<h3>JavaScript Fetch</h3>'
+    html += '<div class="code-block-wrapper">'
+    html +=
       '<button class="code-copy-btn" data-copy-id="' +
       fetchId +
-      '" title="Copy fetch code">' +
-      this.getCopyIconSVG() +
-      '</button>' +
-      '<div class="code-block" id="' +
-      fetchId +
-      '">' +
-      this.escapeHtml(fetchCode) +
-      '</div>' +
-      '</div>' +
-      '</div>'
-    )
+      '" title="Copy fetch code">'
+    html += this.getCopyIconSVG()
+    html += '</button>'
+    html += '<div class="code-block" id="' + fetchId + '">'
+    html += this.escapeHtml(fetchCode)
+    html += '</div>'
+    html += '</div>'
+    html += '</div>'
+
+    // Python Requests
+    html += '<div class="detail-section">'
+    html += '<h3>Python Requests</h3>'
+    html += '<div class="code-block-wrapper">'
+    html +=
+      '<button class="code-copy-btn" data-copy-id="' +
+      pythonId +
+      '" title="Copy Python code">'
+    html += this.getCopyIconSVG()
+    html += '</button>'
+    html += '<div class="code-block" id="' + pythonId + '">'
+    html += this.escapeHtml(pythonCode)
+    html += '</div>'
+    html += '</div>'
+    html += '</div>'
+
+    return html
   }
 
   extractQueryParams(url) {
@@ -1383,6 +1398,99 @@ class NetworkAnalyzer {
     }
 
     return `fetch('${req.url}', ${JSON.stringify(options, null, 2)})`
+  }
+
+  generatePython(req) {
+    let python = 'import requests\n\n'
+
+    // Build headers
+    const headers = {}
+    if (req.requestHeaders) {
+      req.requestHeaders.forEach(h => {
+        headers[h.name] = h.value
+      })
+    }
+
+    // Build params (query parameters)
+    const queryParams = this.extractQueryParams(req.url)
+    const params = {}
+    if (queryParams && queryParams.length > 0) {
+      queryParams.forEach(param => {
+        params[param.name] = param.value
+      })
+    }
+
+    // Get URL without query string
+    let url = req.url
+    try {
+      const urlObj = new URL(req.url)
+      url = urlObj.origin + urlObj.pathname
+    } catch (e) {
+      // If URL parsing fails, try to remove query string manually
+      const urlParts = url.split('?')
+      url = urlParts[0]
+    }
+
+    const method = (req.method || 'GET').toLowerCase()
+
+    // Build the request
+    if (Object.keys(params).length > 0) {
+      python += `params = ${JSON.stringify(params, null, 2)}\n`
+    }
+
+    if (Object.keys(headers).length > 0) {
+      python += `headers = ${JSON.stringify(headers, null, 2)}\n`
+    }
+
+    if (req.requestBody) {
+      const body = this.formatRequestBody(req.requestBody)
+      if (body) {
+        try {
+          // Try to parse as JSON
+          const parsed = JSON.parse(body)
+          python += `json_data = ${JSON.stringify(parsed, null, 2)}\n`
+          python += `\nresponse = requests.${method}('${url}'`
+          if (Object.keys(params).length > 0) {
+            python += `, params=params`
+          }
+          if (Object.keys(headers).length > 0) {
+            python += `, headers=headers`
+          }
+          python += `, json=json_data)`
+        } catch {
+          // Not JSON, use data parameter
+          python += `data = ${JSON.stringify(body)}\n`
+          python += `\nresponse = requests.${method}('${url}'`
+          if (Object.keys(params).length > 0) {
+            python += `, params=params`
+          }
+          if (Object.keys(headers).length > 0) {
+            python += `, headers=headers`
+          }
+          python += `, data=data)`
+        }
+      } else {
+        python += `\nresponse = requests.${method}('${url}'`
+        if (Object.keys(params).length > 0) {
+          python += `, params=params`
+        }
+        if (Object.keys(headers).length > 0) {
+          python += `, headers=headers`
+        }
+        python += `)`
+      }
+    } else {
+      python += `\nresponse = requests.${method}('${url}'`
+      if (Object.keys(params).length > 0) {
+        python += `, params=params`
+      }
+      if (Object.keys(headers).length > 0) {
+        python += `, headers=headers`
+      }
+      python += `)`
+    }
+
+    return python
   }
 
   formatTime(timestamp) {
