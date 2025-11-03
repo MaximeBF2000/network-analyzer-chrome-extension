@@ -4,6 +4,7 @@ class NetworkAnalyzer {
     this.requests = new Map()
     this.selectedRequestId = null
     this.inspectedTabId = null
+    this.isCapturing = true // Start capturing by default
     this.filters = {
       search: '',
       method: '',
@@ -61,6 +62,11 @@ class NetworkAnalyzer {
     )
 
     this.port.onMessage.addListener(msg => {
+      // Only process requests if capturing is enabled
+      if (!this.isCapturing) {
+        return
+      }
+
       if (msg.type === 'NETWORK_REQUEST') {
         // Filter requests by matching URL domain
         if (this.shouldShowRequest(msg.data)) {
@@ -84,6 +90,7 @@ class NetworkAnalyzer {
     // This is especially important in devtools panels
     setTimeout(() => {
       this.initDarkMode()
+      this.updateCaptureButton() // Initialize capture button state
     }, 100)
   }
 
@@ -306,6 +313,11 @@ class NetworkAnalyzer {
       this.render()
     })
 
+    // Capture toggle button
+    document.getElementById('captureBtn').addEventListener('click', () => {
+      this.toggleCapture()
+    })
+
     // Clear button
     document.getElementById('clearBtn').addEventListener('click', () => {
       this.requests.clear()
@@ -393,6 +405,24 @@ class NetworkAnalyzer {
         }
       })
     })
+  }
+
+  toggleCapture() {
+    this.isCapturing = !this.isCapturing
+    this.updateCaptureButton()
+  }
+
+  updateCaptureButton() {
+    const captureBtn = document.getElementById('captureBtn')
+    if (!captureBtn) return
+
+    if (this.isCapturing) {
+      captureBtn.textContent = 'Stop Capture'
+      captureBtn.title = 'Stop capturing new network requests'
+    } else {
+      captureBtn.textContent = 'Capture'
+      captureBtn.title = 'Start capturing new network requests'
+    }
   }
 
   setDarkMode(enabled) {

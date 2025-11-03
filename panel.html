@@ -86,6 +86,16 @@
         background: #357abd;
       }
 
+      .btn-danger {
+        background: #f44336;
+        color: white;
+        border-color: #f44336;
+      }
+
+      .btn-danger:hover {
+        background: #d32f2f;
+      }
+
       /* Request List */
       .request-list {
         flex: 1;
@@ -496,6 +506,16 @@
         background: #357abd;
       }
 
+      body.dark-mode .btn-danger {
+        background: #f44336;
+        border-color: #f44336;
+        color: white;
+      }
+
+      body.dark-mode .btn-danger:hover {
+        background: #d32f2f;
+      }
+
       body.dark-mode .request-row {
         border-bottom-color: #3e3e42;
       }
@@ -625,6 +645,7 @@
           style="width: 200px"
         />
       </div>
+      <button class="btn" id="captureBtn">Stop Capture</button>
       <button class="btn" id="clearBtn">Clear</button>
       <button class="btn btn-primary" id="exportBtn">Export Selected</button>
       <button
