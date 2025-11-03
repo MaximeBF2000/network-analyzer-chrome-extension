@@ -751,6 +751,9 @@ class NetworkAnalyzer {
       case 'curl':
         content.innerHTML = this.renderCurl(req)
         break
+      case 'llm':
+        content.innerHTML = this.renderLLMDetails(req)
+        break
     }
 
     // Attach copy button event listeners
@@ -1278,6 +1281,144 @@ class NetworkAnalyzer {
     html += '</div>'
 
     return html
+  }
+
+  renderLLMDetails(req) {
+    let llmText = ''
+
+    // ===== REQUEST INFORMATION =====
+    llmText += '===== HTTP REQUEST =====\n\n'
+
+    // Method and URL
+    const method = req.method || 'GET'
+    llmText += `Method: ${method}\n`
+    llmText += `URL: ${req.url}\n\n`
+
+    // Query Parameters
+    const queryParams = this.extractQueryParams(req.url)
+    if (queryParams && queryParams.length > 0) {
+      llmText += 'Query Parameters:\n'
+      queryParams.forEach(param => {
+        llmText += `  ${param.name}: ${param.value}\n`
+      })
+      llmText += '\n'
+    }
+
+    // Request Headers
+    if (req.requestHeaders && req.requestHeaders.length > 0) {
+      llmText += 'Request Headers:\n'
+      req.requestHeaders.forEach(header => {
+        llmText += `  ${header.name}: ${header.value}\n`
+      })
+      llmText += '\n'
+    }
+
+    // Request Body
+    if (req.requestBody) {
+      const body = this.formatRequestBody(req.requestBody)
+      if (body && body.trim()) {
+        llmText += 'Request Body:\n'
+        // Try to format JSON if it's JSON
+        try {
+          const parsed = JSON.parse(body)
+          llmText += JSON.stringify(parsed, null, 2)
+        } catch {
+          llmText += body
+        }
+        llmText += '\n\n'
+      }
+    }
+
+    // ===== RESPONSE INFORMATION =====
+    llmText += '===== HTTP RESPONSE =====\n\n'
+
+    // Response Status
+    if (req.statusCode) {
+      llmText += `Status Code: ${req.statusCode}\n`
+      if (req.statusLine) {
+        llmText += `Status Line: ${req.statusLine}\n`
+      }
+      llmText += '\n'
+    } else if (req.error) {
+      llmText += `Error: ${req.error}\n\n`
+    }
+
+    // Response Headers
+    if (req.responseHeaders && req.responseHeaders.length > 0) {
+      llmText += 'Response Headers:\n'
+      req.responseHeaders.forEach(header => {
+        llmText += `  ${header.name}: ${header.value}\n`
+      })
+      llmText += '\n'
+    }
+
+    // Response Body
+    const hasResponseBody =
+      req.hasOwnProperty('responseBody') &&
+      req.responseBody !== null &&
+      req.responseBody !== undefined
+
+    if (hasResponseBody) {
+      let formattedBody = String(req.responseBody)
+      const mimeType = req.responseBodyMimeType || ''
+
+      // Try to format JSON if it's JSON
+      if (
+        mimeType.includes('json') ||
+        (formattedBody.trim().startsWith('{') &&
+          formattedBody.trim().endsWith('}')) ||
+        (formattedBody.trim().startsWith('[') &&
+          formattedBody.trim().endsWith(']'))
+      ) {
+        try {
+          const parsed = JSON.parse(formattedBody)
+          formattedBody = JSON.stringify(parsed, null, 2)
+        } catch (e) {
+          // Not valid JSON, use as-is
+        }
+      }
+
+      llmText += 'Response Body:\n'
+      if (mimeType) {
+        llmText += `Content-Type: ${mimeType}\n\n`
+      }
+      llmText += formattedBody
+      llmText += '\n'
+    } else if (req.responseBodyUnavailable) {
+      llmText +=
+        'Response Body: Not available (CORS restrictions, binary content, or blocked)\n'
+    }
+
+    // Additional metadata
+    if (req.type) {
+      llmText += `\nRequest Type: ${req.type}\n`
+    }
+    if (req.timestamp) {
+      llmText += `Timestamp: ${new Date(req.timestamp).toISOString()}\n`
+    }
+
+    llmText += '\n===== END OF REQUEST/RESPONSE =====\n'
+
+    // Create the HTML with a single copyable block
+    const llmId = 'copy-llm-' + req.requestId
+    return (
+      '<div class="detail-section">' +
+      '<h3>LLM Formatted Request/Response Details</h3>' +
+      '<p style="color: #666; font-size: 11px; margin-bottom: 8px;">Copy the entire block below and paste into your LLM tool (ChatGPT, etc.) for analysis.</p>' +
+      '<div class="code-block-wrapper">' +
+      '<button class="code-copy-btn" data-copy-id="' +
+      llmId +
+      '" title="Copy LLM details">' +
+      this.getCopyIconSVG() +
+      '</button>' +
+      '<div class="code-block" id="' +
+      llmId +
+      '" style="max-height: 60vh; overflow-y: auto;">' +
+      this.escapeHtml(llmText) +
+      '</div>' +
+      '</div>' +
+      '</div>'
+    )
   }
 
   extractQueryParams(url) {
