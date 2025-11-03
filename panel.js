@@ -326,11 +326,6 @@ class NetworkAnalyzer {
       this.closeDetailPanel()
     })
 
-    // Export button
-    document.getElementById('exportBtn').addEventListener('click', () => {
-      this.exportSelected()
-    })
-
     // Tab switching
     document.querySelectorAll('.detail-tab').forEach(tab => {
       tab.addEventListener('click', e => {
@@ -1523,23 +1518,6 @@ class NetworkAnalyzer {
     document.getElementById('typeFilter').value = ''
     document.getElementById('urlFilter').value = ''
     this.render()
-  }
-
-  exportSelected() {
-    if (!this.selectedRequestId || !this.requests.has(this.selectedRequestId)) {
-      alert('Please select a request first')
-      return
-    }
-
-    const req = this.requests.get(this.selectedRequestId)
-    const curl = this.generateCurl(req)
-    const blob = new Blob([curl], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `request-${req.requestId}.curl`
-    a.click()
-    URL.revokeObjectURL(url)
   }
 
   getCopyIconSVG() {
