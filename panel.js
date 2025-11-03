@@ -3,6 +3,7 @@ class NetworkAnalyzer {
   constructor() {
     this.requests = new Map()
     this.selectedRequestId = null
+    this.inspectedTabId = null
     this.filters = {
       search: '',
       method: '',
@@ -35,7 +36,13 @@ class NetworkAnalyzer {
       this.captureResponseBody(harRequest)
     })
 
-    // Get the inspected tab's URL and use it to filter requests
+    // Get the inspected tab ID to filter requests by tab
+    // Note: chrome.devtools.inspectedWindow.tabId might not be available in all Chrome versions
+    // We'll use a different approach: show all requests and let the user filter if needed
+    // The key change is removing origin-based filtering which was too restrictive
+    this.inspectedTabId = null
+
+    // Get the inspected tab's URL (for reference, but we won't filter by origin)
     chrome.devtools.inspectedWindow.eval(
       'window.location.href',
       inspectedUrl => {
@@ -259,21 +266,15 @@ class NetworkAnalyzer {
   }
 
   shouldShowRequest(req) {
-    if (!this.inspectedUrl) return true // Show all if we don't know the inspected URL yet
+    // Show all requests - don't filter by origin or tab
+    // The native Network tab shows all requests regardless of origin,
+    // so we should do the same. Users can filter using the search/filter UI if needed.
 
-    try {
-      const inspected = new URL(this.inspectedUrl)
-      const requestUrl = new URL(req.url)
+    // Only exclude requests that are clearly not from the inspected context:
+    // - Requests with tabId === -1 that are from other tabs (but we can't easily detect this)
+    // For now, show everything and let users filter manually
 
-      // Match by origin (protocol + hostname + port)
-      return (
-        inspected.origin === requestUrl.origin ||
-        requestUrl.origin === 'null' || // Some requests might be data: URLs
-        req.tabId === -1
-      ) // Show requests not associated with a tab
-    } catch (e) {
-      return true // Show all if URL parsing fails
-    }
+    return true
   }
 
   setupUI() {
