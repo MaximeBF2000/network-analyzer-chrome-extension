@@ -190,14 +190,49 @@
       /* Detail Panel */
       .detail-panel {
         border-top: 1px solid #ddd;
-        max-height: 50vh;
-        overflow-y: auto;
+        height: 50vh;
+        overflow: hidden;
         background: #fafafa;
         display: none;
+        flex-direction: column;
+        position: relative;
       }
 
       .detail-panel.active {
-        display: block;
+        display: flex;
+      }
+
+      /* Resize Handle */
+      .detail-resize-handle {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: transparent;
+        cursor: ns-resize;
+        z-index: 10;
+        transition: background 0.2s;
+      }
+
+      .detail-resize-handle:hover {
+        background: #4a90e2;
+      }
+
+      .detail-resize-handle:active {
+        background: #357abd;
+      }
+
+      body.dark-mode .detail-resize-handle {
+        background: transparent;
+      }
+
+      body.dark-mode .detail-resize-handle:hover {
+        background: #4a90e2;
+      }
+
+      body.dark-mode .detail-resize-handle:active {
+        background: #357abd;
       }
 
       .detail-tabs {
@@ -205,6 +240,7 @@
         background: #f5f5f5;
         border-bottom: 1px solid #ddd;
         position: relative;
+        flex-shrink: 0;
       }
 
       .detail-close-btn {
@@ -245,6 +281,9 @@
 
       .detail-content {
         padding: 16px;
+        overflow-y: auto;
+        flex: 1;
+        min-height: 0;
       }
 
       .detail-section {
@@ -670,6 +709,11 @@
 
     <!-- Detail Panel -->
     <div class="detail-panel" id="detailPanel">
+      <div
+        class="detail-resize-handle"
+        id="detailResizeHandle"
+        title="Drag to resize"
+      ></div>
       <div class="detail-tabs">
         <button class="detail-tab active" data-tab="headers">Request</button>
         <button class="detail-tab" data-tab="response">Response</button>

@@ -91,7 +91,24 @@ class NetworkAnalyzer {
     setTimeout(() => {
       this.initDarkMode()
       this.updateCaptureButton() // Initialize capture button state
+      this.initDetailPanelHeight() // Load saved panel height
     }, 100)
+  }
+
+  initDetailPanelHeight() {
+    chrome.storage.local.get(['detailPanelHeight'], result => {
+      if (chrome.runtime.lastError) {
+        console.warn('Error loading detail panel height:', chrome.runtime.lastError)
+        return
+      }
+      
+      if (result.detailPanelHeight) {
+        const detailPanel = document.getElementById('detailPanel')
+        if (detailPanel) {
+          detailPanel.style.height = `${result.detailPanelHeight}px`
+        }
+      }
+    })
   }
 
   captureResponseBody(harRequest) {
@@ -348,6 +365,61 @@ class NetworkAnalyzer {
     document.getElementById('darkModeToggle').addEventListener('click', () => {
       this.toggleDarkMode()
     })
+
+    // Setup resize handle
+    this.setupResizeHandle()
+  }
+
+  setupResizeHandle() {
+    const resizeHandle = document.getElementById('detailResizeHandle')
+    const detailPanel = document.getElementById('detailPanel')
+    
+    if (!resizeHandle || !detailPanel) return
+
+    let isResizing = false
+    let startY = 0
+    let startHeight = 0
+
+    resizeHandle.addEventListener('mousedown', (e) => {
+      isResizing = true
+      startY = e.clientY
+      startHeight = detailPanel.offsetHeight
+      
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      
+      e.preventDefault()
+    })
+
+    const handleMouseMove = (e) => {
+      if (!isResizing) return
+
+      const deltaY = startY - e.clientY // Inverted because we're resizing from top
+      const newHeight = startHeight + deltaY
+      
+      // Constrain height between 20vh and 90vh
+      const minHeight = window.innerHeight * 0.2
+      const maxHeight = window.innerHeight * 0.9
+      const constrainedHeight = Math.max(minHeight, Math.min(maxHeight, newHeight))
+      
+      detailPanel.style.height = `${constrainedHeight}px`
+    }
+
+    const handleMouseUp = () => {
+      if (!isResizing) return
+      
+      isResizing = false
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      
+      // Save the height preference
+      const height = detailPanel.offsetHeight
+      chrome.storage.local.set({ detailPanelHeight: height }, () => {
+        if (chrome.runtime.lastError) {
+          console.warn('Error saving detail panel height:', chrome.runtime.lastError)
+        }
+      })
+    }
   }
 
   initDarkMode() {
